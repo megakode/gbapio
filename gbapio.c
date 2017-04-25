@@ -3,16 +3,25 @@
 #include <stdint.h>
 #include <ncurses.h>
 
-const int CS2 = 8;
-const int WR = 29;
-const int RD = 9;
-const int CS = 31;
+// ******************************************
+// Configuration
+// ******************************************
+
+const int CS2 = 8; // WiringPi pin which are connected to the GBA CS2 pin
+const int WR = 29; // WiringPi pin which are connected to the GBA WR (Write) pin
+const int RD = 9;  // WiringPi pin which are connected to the GBA RD (Read) pin
+const int CS = 31; // WiringPi pin which are connected to the GBA CS (Chip Select) pin
+
+// List of the WiringPi pins which the GBA address pins a0..a23 are physically connected to.
 const int ADRPINS[24] = {0,1,2,3,4,5,6,7,28,30,10,11,12,13,14,15,16,21,22,23,24,25,26,27};
-const int DATAPINS[16] = {0,1,2,3,4,5,6,7,28,30,10,11,12,13,14,15};
+// List of the WiringPi pins which the GBA data pins d0..d15 are connected to. (This is basically the same as the first 16 adr pins, but i keep them seperate for flexibility)
+const int DATAPINS[16] = {0,1,2,3,4,5,6,7,28,30,10,11,12,13,14,15}; 
 
 #define COLOR_CURSOR 1
 #define COLOR_BIT_ON 2
 #define COLOR_MENU 3
+
+// ******************************************
 
 void printBinaryAt(int y, int x,int value);
 
@@ -21,6 +30,8 @@ int switchBits(int value, int bitFrom, int bitTo);
 void setAddress(int adr);
 
 int readInt();
+
+// ******************************************
 
 int main (void)
 {
@@ -57,8 +68,8 @@ int main (void)
     setAddress(0);
     digitalWrite(CS,0);  // CS=low - latch address   
 
-    char c = 0;
-    int on = 1;
+    //char c = 0;
+    //int on = 1;
     int bit = 0;
     int adr = 0;
     for(;;)
@@ -105,7 +116,7 @@ int main (void)
             for(int i = 0 ; i < 16 ; i++){
                 pinMode(DATAPINS[i],OUTPUT);
             }
-            setAddress(0x20); // Når jeg læser fra 0x20 får jeg data fra 0x40, det er en bit shifted up i addresse?!
+            setAddress(0x20);
             digitalWrite(CS,1);   
             digitalWrite(CS,0);  // CS=low - latch address
 /*
@@ -232,7 +243,7 @@ void printBinaryAt(int y, int x,int value)
 };
 
 // ***************************************************
-// Set address on ADR port
+
 // ***************************************************
 
 /*
@@ -250,12 +261,20 @@ int switchBits(int value, int bitFrom, int bitTo)
     return value;
 }
 
+// ******************************************
+// Set address on ADR port. Remember to latch CS low afterwards for it to take effect.
+// ******************************************
+
 void setAddress(int adr)
 {
     for(int i=0;i<24;i++){
 	    digitalWrite(ADRPINS[i],(adr&(1<<i)) ? 1:0 );
     }
 } 
+
+// ******************************************
+// readInt
+// ******************************************
 
 int readInt(){
     
@@ -269,13 +288,12 @@ int readInt(){
     delay(1);
     digitalWrite(RD,1);
 
-    uint16_t readBit = 0;
     int value = 0;
     
     // Get bits from GPIO pins
     for(int i = 15 ; i >= 0 ; i--)
     {
-        int  readBit = digitalRead(DATAPINS[i]);
+        int readBit = digitalRead(DATAPINS[i]);
         if(readBit) value = value | (1<<i);
     }
 
